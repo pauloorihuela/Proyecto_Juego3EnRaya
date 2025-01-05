@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-import { AdMobBanner, AdMobInterstitial, InterstitialAdManager } from 'expo-ads-admob';
+import { AdMobInterstitial } from 'expo-ads-admob'; // Solo interstitial
 
 const Square = ({ value, onPress }) => (
   <TouchableOpacity style={styles.square} onPress={onPress}>
@@ -16,7 +16,7 @@ const Board = () => {
   useEffect(() => {
     // Cargar el intersticial al montar el componente
     const loadInterstitialAd = async () => {
-      await AdMobInterstitial.setAdUnitID('ca-app-pub-3940256099942544/9214589741'); // ID de prueba
+      await AdMobInterstitial.setAdUnitID('ca-app-pub-8633873973591632/6924969216'); // ID de prueba
       await AdMobInterstitial.requestAdAsync();
       setIsInterstitialLoaded(true);
     };
@@ -113,16 +113,6 @@ const Board = () => {
       <TouchableOpacity style={styles.restartButton} onPress={handleRestart}>
         <Text style={styles.restartButtonText}>Reiniciar Partida</Text>
       </TouchableOpacity>
-
-      {/* Banner Ad */}
-      <View style={styles.adContainer}>
-        <AdMobBanner
-          bannerSize="fullBanner"
-          adUnitID="ca-app-pub-3940256099942544/9214589741" // ID de prueba
-          servePersonalizedAds={false}
-          onDidFailToReceiveAdWithError={(error) => console.log("Error del banner:", error)}
-        />
-      </View>
     </View>
   );
 };
@@ -170,10 +160,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  adContainer: {
-    marginTop: 20,
-    alignItems: 'center',
   },
 });
 

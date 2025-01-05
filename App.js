@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AdMobBanner, AdMobInterstitial } from 'expo-ads-admob'; // Importa AdMob
+import { AdMobInterstitial } from 'expo-ads-admob'; // Importa solo AdMobInterstitial
 import Board from './TicTacToe';  // Suponiendo que Board es el componente donde manejas el juego
 
 export default function App() {
-  // Inicialización de anuncios intersticiales en App.js (si es necesario)
-  React.useEffect(() => {
+  // Inicialización de anuncios intersticiales en App.js
+  useEffect(() => {
     // Configura el ID del anuncio intersticial
     const loadInterstitialAd = async () => {
-      await AdMobInterstitial.setAdUnitID('ca-app-pub-3940256099942544/9214589741'); // ID de prueba
+      await AdMobInterstitial.setAdUnitID('ca-app-pub-8633873973591632/6924969216'); // ID de prueba
       await AdMobInterstitial.requestAdAsync();
     };
 
@@ -20,17 +20,19 @@ export default function App() {
     };
   }, []);
 
+  const showInterstitialAd = async () => {
+    try {
+      await AdMobInterstitial.showAdAsync(); // Muestra el anuncio intersticial
+    } catch (error) {
+      console.log('Error mostrando el anuncio intersticial', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Board />
       
-      {/* Banner Ad */}
-      <AdMobBanner
-        bannerSize="fullBanner"
-        adUnitID="ca-app-pub-3940256099942544/9214589741"  // ID de prueba para banner
-        servePersonalizedAds={false}
-        onDidFailToReceiveAdWithError={(error) => console.log("Error del banner:", error)}
-      />
+      {/* Puedes llamar a `showInterstitialAd` en eventos específicos */}
     </View>
   );
 }
