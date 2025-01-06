@@ -1,33 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-import { AdMobInterstitial } from 'expo-ads-admob'; // Solo interstitial
+import { StyleSheet, Text, View, TouchableOpacity, Modal, Button } from 'react-native';
+import { AdMobInterstitial } from 'expo-ads-admob';
 
-const Square = ({ value, onPress }) => (
-  <TouchableOpacity style={styles.square} onPress={onPress}>
+const Square = ({ value, onPress, isWinning }) => (
+  <TouchableOpacity
+    style={[styles.square, isWinning ? styles.winningSquare : null]}
+    onPress={onPress}
+  >
     <Text style={styles.squareText}>{value}</Text>
   </TouchableOpacity>
 );
 
-const Board = () => {
-  const [squares, setSquares] = useState(Array(9).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
+const TicTacToe = () => {
+  const [gameState, setGameState] = useState({
+    squares: Array(9).fill(null),
+    xIsNext: true,
+  });
+  const [winner, setWinner] = useState(null);
+  const [winningSquares, setWinningSquares] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
 
   useEffect(() => {
-    // Cargar el intersticial al montar el componente
     const loadInterstitialAd = async () => {
-      await AdMobInterstitial.setAdUnitID('ca-app-pub-8633873973591632/6924969216'); // ID de prueba
-      await AdMobInterstitial.requestAdAsync();
-      setIsInterstitialLoaded(true);
+      try {
+        await AdMobInterstitial.setAdUnitID('ca-app-pub-8633873973591632/6924969216'); // Cambia este ID por el tuyo
+        await AdMobInterstitial.requestAdAsync();
+        setIsInterstitialLoaded(true);
+      } catch (error) {
+        console.error('Error al cargar el anuncio intersticial:', error);
+      }
     };
 
     loadInterstitialAd();
 
     return () => {
-      // Limpiar intersticial cuando el componente se desmonta
       AdMobInterstitial.removeAllListeners();
     };
   }, []);
+
+  const showInterstitialAd = async () => {
+    if (isInterstitialLoaded) {
+      try {
+        await AdMobInterstitial.showAdAsync();
+      } catch (error) {
+        console.error('Error mostrando el anuncio intersticial:', error);
+      }
+    }
+  };
 
   const calculateWinner = (squares) => {
     const lines = [
@@ -43,76 +63,73 @@ const Board = () => {
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i];
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
+        return { winner: squares[a], line: lines[i] };
       }
     }
     return null;
   };
 
-  const showInterstitialAd = () => {
-    if (isInterstitialLoaded) {
-      AdMobInterstitial.showAdAsync()
-        .catch((error) => console.log("Error mostrando el anuncio intersticial", error));
-    }
-  };
-
   const handleClick = (i) => {
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
+    const { squares, xIsNext } = gameState;
+    if (winner || squares[i]) return;
+
     const newSquares = squares.slice();
     newSquares[i] = xIsNext ? 'X' : 'O';
-    setSquares(newSquares);
-    setXIsNext(!xIsNext);
+    const result = calculateWinner(newSquares);
+
+    if (result) {
+      setWinner(result.winner);
+      setWinningSquares(result.line);
+      setIsModalVisible(true);
+    }
+
+    setGameState({
+      squares: newSquares,
+      xIsNext: !xIsNext,
+    });
+
+    if (newSquares.every((square) => square !== null) && !result) {
+      setWinner('Empate');
+      setIsModalVisible(true);
+    }
   };
 
-  const winner = calculateWinner(squares);
-  let status;
-  if (winner) {
-    status = `Ganador: ${winner}`;
-    Alert.alert(
-      "¡Tenemos un ganador!",
-      `¡${winner} ha ganado la partida!`,
-      [
-        { text: "Reiniciar", onPress: () => {
-          setSquares(Array(9).fill(null));
-          showInterstitialAd();
-        }}
-      ]
-    );
-  } else if (squares.every(square => square !== null)) {
-    status = "Empate";
-    Alert.alert(
-      "¡Empate!",
-      "La partida ha terminado en empate.",
-      [
-        { text: "Reiniciar", onPress: () => {
-          setSquares(Array(9).fill(null));
-          showInterstitialAd();
-        }}
-      ]
-    );
-  } else {
-    status = `Siguiente jugador: ${xIsNext ? 'X' : 'O'}`;
-  }
-
   const handleRestart = () => {
-    setSquares(Array(9).fill(null));
-    setXIsNext(true);
+    setGameState({ squares: Array(9).fill(null), xIsNext: true });
+    setWinner(null);
+    setWinningSquares([]);
+    setIsModalVisible(false);
     showInterstitialAd();
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.status}>{status}</Text>
+      <Text style={styles.status}>
+        {winner ? `Ganador: ${winner}` : `Siguiente jugador: ${gameState.xIsNext ? 'X' : 'O'}`}
+      </Text>
       <View style={styles.board}>
-        {squares.map((square, i) => (
-          <Square key={i} value={square} onPress={() => handleClick(i)} />
+        {gameState.squares.map((square, i) => (
+          <Square
+            key={i}
+            value={square}
+            onPress={() => handleClick(i)}
+            isWinning={winningSquares.includes(i)}
+          />
         ))}
       </View>
       <TouchableOpacity style={styles.restartButton} onPress={handleRestart}>
         <Text style={styles.restartButtonText}>Reiniciar Partida</Text>
       </TouchableOpacity>
+      <Modal visible={isModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>
+              {winner === 'Empate' ? '¡Empate!' : `¡${winner} ha ganado!`}
+            </Text>
+            <Button title="Reiniciar" onPress={handleRestart} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -146,6 +163,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'white',
   },
+  winningSquare: {
+    backgroundColor: '#FFD700',
+  },
   squareText: {
     fontSize: 36,
     fontWeight: 'bold',
@@ -161,6 +181,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 20,
+    marginBottom: 20,
+  },
 });
 
-export default Board;
+export default TicTacToe;
