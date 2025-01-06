@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-import { AdMobInterstitial } from 'expo-ads-admob';
+import { InterstitialAd, AdEventType, TestIds, BannerAd, BannerAdSize } from '@react-native-google-mobile-ads/interstitial';
+import { AppOpenAd } from '@react-native-google-mobile-ads/app';  // Para usar anuncios de apertura si lo deseas
 
 const Square = ({ value, onPress }) => (
   <TouchableOpacity style={styles.square} onPress={onPress}>
@@ -13,23 +14,36 @@ const TicTacToe = () => {
   const [xIsNext, setXIsNext] = useState(true);
   const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
 
+  const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL); // Usando ID de prueba
+
   useEffect(() => {
-    const loadInterstitialAd = async () => {
-      try {
-        await AdMobInterstitial.setAdUnitID('ca-app-pub-3940256099942544/1033173712'); // ID de prueba
-        await AdMobInterstitial.requestAdAsync();
-        setIsInterstitialLoaded(true);
-      } catch (error) {
-        console.error('Error al cargar el anuncio intersticial:', error);
-      }
+    // Cargar el anuncio intersticial
+    const loadInterstitialAd = () => {
+      interstitial.load();
+      interstitial.onAdEvent((type, error) => {
+        if (type === AdEventType.LOADED) {
+          setIsInterstitialLoaded(true);
+        }
+        if (type === AdEventType.ERROR) {
+          console.error('Ad Error', error);
+        }
+      });
     };
 
     loadInterstitialAd();
 
     return () => {
-      AdMobInterstitial.removeAllListeners();
+      interstitial.removeAllListeners();
     };
   }, []);
+
+  const showInterstitialAd = () => {
+    if (isInterstitialLoaded) {
+      interstitial.show();
+      setIsInterstitialLoaded(false); // After showing ad, reload it
+      interstitial.load();
+    }
+  };
 
   const calculateWinner = (squares) => {
     const lines = [
@@ -49,14 +63,6 @@ const TicTacToe = () => {
       }
     }
     return null;
-  };
-
-  const showInterstitialAd = () => {
-    if (isInterstitialLoaded) {
-      AdMobInterstitial.showAdAsync().catch((error) =>
-        console.error('Error mostrando el anuncio intersticial:', error)
-      );
-    }
   };
 
   const handleClick = (i) => {
