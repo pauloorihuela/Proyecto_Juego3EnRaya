@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-import { InterstitialAd, AdEventType, TestIds, BannerAd, BannerAdSize } from '@react-native-google-mobile-ads/interstitial';
-import { AppOpenAd } from '@react-native-google-mobile-ads/app';  // Para usar anuncios de apertura si lo deseas
+import { InterstitialAd, AdEventType, TestIds } from '@react-native-google-mobile-ads/interstitial'; // Usamos TestIds para anuncios de prueba
 
 const Square = ({ value, onPress }) => (
   <TouchableOpacity style={styles.square} onPress={onPress}>
@@ -14,18 +13,19 @@ const TicTacToe = () => {
   const [xIsNext, setXIsNext] = useState(true);
   const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
 
+  // Creamos el anuncio intersticial usando el ID de prueba
   const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL); // Usando ID de prueba
 
   useEffect(() => {
     // Cargar el anuncio intersticial
     const loadInterstitialAd = () => {
-      interstitial.load();
+      interstitial.load(); // Carga el anuncio
       interstitial.onAdEvent((type, error) => {
         if (type === AdEventType.LOADED) {
-          setIsInterstitialLoaded(true);
+          setIsInterstitialLoaded(true); // Si se carga correctamente, marcamos como cargado
         }
         if (type === AdEventType.ERROR) {
-          console.error('Ad Error', error);
+          console.error('Ad Error', error); // Si ocurre algún error
         }
       });
     };
@@ -33,18 +33,20 @@ const TicTacToe = () => {
     loadInterstitialAd();
 
     return () => {
-      interstitial.removeAllListeners();
+      interstitial.removeAllListeners(); // Limpiar los listeners cuando el componente se desmonte
     };
   }, []);
 
+  // Función para mostrar el anuncio intersticial
   const showInterstitialAd = () => {
     if (isInterstitialLoaded) {
-      interstitial.show();
-      setIsInterstitialLoaded(false); // After showing ad, reload it
+      interstitial.show(); // Muestra el anuncio
+      setIsInterstitialLoaded(false); // Después de mostrar el anuncio, lo recargamos
       interstitial.load();
     }
   };
 
+  // Función para calcular el ganador
   const calculateWinner = (squares) => {
     const lines = [
       [0, 1, 2],
@@ -59,22 +61,24 @@ const TicTacToe = () => {
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i];
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
+        return squares[a]; // Si hay un ganador, lo devuelve
       }
     }
-    return null;
+    return null; // Si no hay ganador, devuelve null
   };
 
+  // Función que maneja el clic de una casilla
   const handleClick = (i) => {
     if (calculateWinner(squares) || squares[i]) {
-      return;
+      return; // Si ya hay un ganador o la casilla está ocupada, no hace nada
     }
     const newSquares = squares.slice();
-    newSquares[i] = xIsNext ? 'X' : 'O';
+    newSquares[i] = xIsNext ? 'X' : 'O'; // Cambia entre X y O
     setSquares(newSquares);
-    setXIsNext(!xIsNext);
+    setXIsNext(!xIsNext); // Cambia al siguiente jugador
   };
 
+  // Calculamos si hay ganador
   const winner = calculateWinner(squares);
   let status;
   if (winner) {
@@ -84,7 +88,7 @@ const TicTacToe = () => {
         text: 'Reiniciar',
         onPress: () => {
           setSquares(Array(9).fill(null));
-          showInterstitialAd();
+          showInterstitialAd(); // Mostrar anuncio al reiniciar
         },
       },
     ]);
@@ -95,7 +99,7 @@ const TicTacToe = () => {
         text: 'Reiniciar',
         onPress: () => {
           setSquares(Array(9).fill(null));
-          showInterstitialAd();
+          showInterstitialAd(); // Mostrar anuncio al reiniciar
         },
       },
     ]);
@@ -103,10 +107,11 @@ const TicTacToe = () => {
     status = `Siguiente jugador: ${xIsNext ? 'X' : 'O'}`;
   }
 
+  // Función para reiniciar la partida
   const handleRestart = () => {
     setSquares(Array(9).fill(null));
     setXIsNext(true);
-    showInterstitialAd();
+    showInterstitialAd(); // Mostrar anuncio al reiniciar
   };
 
   return (
