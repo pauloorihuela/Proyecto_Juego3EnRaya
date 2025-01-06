@@ -1,24 +1,12 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { initializeApp } from 'expo-ads-admob';
+import { StatusBar } from 'react-native';
 import TicTacToe from './TicTacToe';
 
-// Inicializar AdMob
-initializeApp();
-
-const App = () => {
+export default function App() {
   return (
-    <View style={styles.container}>
+    <>
+      <StatusBar barStyle="dark-content" />
       <TicTacToe />
-    </View>
+    </>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F0F0',
-  },
-});
-
-export default App;
+}
