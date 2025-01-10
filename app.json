@@ -5,10 +5,7 @@
     "version": "1.0.0",
     "sdkVersion": "52.0.0",
     "platforms": ["ios", "android"],
-    "newArchEnabled": true
-  }
-  {
-  "expo": {
+    "newArchEnabled": true,
     "android": {
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
@@ -20,6 +17,4 @@
       }
     }
   }
-}
-
 }
