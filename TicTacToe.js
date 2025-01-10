@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { AdMobBanner, AdMobInterstitial } from 'expo-ads-admob';
+
+const { width: screenWidth } = Dimensions.get('window');
+const boardSize = screenWidth * 0.8;
 
 const Square = ({ value, onPress }) => (
   <TouchableOpacity style={styles.square} onPress={onPress}>
@@ -12,25 +15,39 @@ const Board = () => {
   const [squares, setSquares] = useState(Array(9).fill(null));
   const [xIsNext, setXIsNext] = useState(true);
 
-  // Función para mostrar anuncio intersticial
+  // Prepara el anuncio intersticial al cargar el componente
+  useEffect(() => {
+    const prepareInterstitialAd = async () => {
+      try {
+        await AdMobInterstitial.setAdUnitID('ca-app-pub-3940256099942544/1033173712'); // ID de prueba
+        await AdMobInterstitial.requestAdAsync();
+      } catch (error) {
+        console.log('Error preparando el interstitial:', error);
+      }
+    };
+
+    prepareInterstitialAd();
+  }, []);
+
   const showInterstitialAd = async () => {
     try {
-      await AdMobInterstitial.setAdUnitID('ca-app-pub-3940256099942544/1033173712'); // ID de prueba
-      await AdMobInterstitial.requestAdAsync();
-      await AdMobInterstitial.showAdAsync();
+      const isReady = await AdMobInterstitial.getIsReadyAsync();
+      if (isReady) {
+        await AdMobInterstitial.showAdAsync();
+      } else {
+        console.log('El anuncio intersticial no está listo');
+      }
     } catch (error) {
-      console.log('Error al cargar el interstitial:', error);
+      console.log('Error al mostrar el interstitial:', error);
     }
   };
 
-  // Función para reiniciar el juego
   const restartGame = async () => {
-    await showInterstitialAd(); // Mostrar anuncio antes de reiniciar
+    await showInterstitialAd(); // Muestra el anuncio antes de reiniciar
     setSquares(Array(9).fill(null));
     setXIsNext(true);
   };
 
-  // Lógica para determinar el ganador
   const calculateWinner = (squares) => {
     const lines = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], // Filas
@@ -47,9 +64,12 @@ const Board = () => {
   };
 
   const winner = calculateWinner(squares);
+  const isDraw = !squares.includes(null) && !winner;
   const status = winner
     ? `Ganador: ${winner}`
-    : `Turno de: ${xIsNext ? 'X' : 'O'}`;
+    : isDraw
+      ? '¡Empate!'
+      : `Turno de: ${xIsNext ? 'X' : 'O'}`;
 
   const handlePress = (i) => {
     if (squares[i] || winner) {
@@ -64,11 +84,15 @@ const Board = () => {
       Alert.alert('¡Tenemos un ganador!', `El ganador es ${xIsNext ? 'X' : 'O'}`, [
         { text: 'Reiniciar', onPress: restartGame },
       ]);
+    } else if (!nextSquares.includes(null)) {
+      Alert.alert('¡Empate!', 'El juego ha terminado en empate.', [
+        { text: 'Reiniciar', onPress: restartGame },
+      ]);
     }
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       <Text style={styles.status}>{status}</Text>
       <View style={styles.board}>
         {squares.map((square, i) => (
@@ -79,7 +103,6 @@ const Board = () => {
         <Text style={styles.restartText}>Reiniciar</Text>
       </TouchableOpacity>
 
-      {/* Banner Ad */}
       <AdMobBanner
         bannerSize="fullBanner"
         adUnitID="ca-app-pub-3940256099942544/6300978111" // ID de prueba
@@ -91,17 +114,22 @@ const Board = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   board: {
-    display: 'flex',
+    width: boardSize,
+    height: boardSize,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: 300,
-    height: 300,
-    margin: 20,
+    marginVertical: 20,
   },
   square: {
-    width: 100,
-    height: 100,
+    width: boardSize / 3,
+    height: boardSize / 3,
     borderWidth: 1,
     borderColor: '#000',
     alignItems: 'center',
@@ -116,10 +144,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   restartButton: {
-    marginTop: 20,
     padding: 10,
     backgroundColor: '#2196F3',
-    alignSelf: 'center',
     borderRadius: 5,
   },
   restartText: {
